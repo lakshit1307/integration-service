@@ -1,8 +1,10 @@
 package com.healthedge.integrationservice.service;
 
+import com.healthedge.integrationservice.camel.ClientFtpRoute;
 import com.healthedge.integrationservice.camel.FtpRoute;
 import com.healthedge.integrationservice.common.IntegrationServiceConstants;
 import com.healthedge.integrationservice.dao.TenantAttributeDao;
+import com.healthedge.integrationservice.kafka.KafkaProducer;
 import org.apache.camel.spring.SpringCamelContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,12 @@ public class ProducerServiceImpl {
     @Autowired
     private SpringCamelContext context;
 
+    @Autowired
+    private KafkaProducer kafkaProducer;
+
+    @Autowired
+    private TenantService tenantService;
+
     public String processDataForTenantId(Long tenantId) throws Exception {
         List<Map<String, String>> clientDataSet = clientTransformationService.getTransformedDataSet(tenantId);
         Map<String, String> primaryAttributes = tenantAttributeDao.getTenantAttributesForAttributeType(tenantId, IntegrationServiceConstants.ATTRIBUTE_TYPE_PRIMARY);
@@ -39,7 +47,7 @@ public class ProducerServiceImpl {
             String ftpUrl = primaryAttributes.get(IntegrationServiceConstants.ATTRIBUTE_NAME_FTP_URL);
             Long currentTime = new Long(new Date().getTime());
             String routeName = "FTP_ROUTE" + tenantId.toString() + "_" + currentTime.toString();
-            FtpRoute ftpRoute = new FtpRoute(fileName, ftpUrl, routeName, context);
+            FtpRoute ftpRoute = new FtpRoute(fileName, ftpUrl, routeName);
             try {
                 context.addRoutes(ftpRoute);
                 context.getRouteStatus(routeName);
@@ -52,4 +60,16 @@ public class ProducerServiceImpl {
         return IntegrationServiceConstants.FAILURE;
     }
 
+    public void sendTenantDataToKafka(Long tenantId) throws Exception {
+        LOGGER.debug("Sending tenant Data to kafka");
+        ClientFtpRoute ftpRoute = new ClientFtpRoute(tenantId, kafkaProducer, tenantService);
+        String routeId=IntegrationServiceConstants.CLIENT_ROUTE+tenantId.toString();
+        if (context.getRoute(routeId)==null) {
+            context.addRoutes(ftpRoute);
+        }
+        else {
+            context.getRouteStatus(routeId);
+            context.removeRoute(routeId);
+        }
+    }
 }

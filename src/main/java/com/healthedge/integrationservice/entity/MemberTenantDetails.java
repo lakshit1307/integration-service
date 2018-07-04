@@ -1,11 +1,12 @@
 package com.healthedge.integrationservice.entity;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Date;
 
 @Entity
 @Table(name = "MEMBER_TENANT_DETAILS")
-public class MemberTenantDetails {
+public class MemberTenantDetails implements Serializable {
 
     @Id
     @Column(name = "MEMBER_TENANT_ID")

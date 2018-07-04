@@ -1,5 +1,6 @@
 package com.healthedge.integrationservice.kafka;
 
+import com.healthedge.integrationservice.dto.MemberTenantScore;
 import com.healthedge.integrationservice.service.TenantService;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -59,20 +60,18 @@ public class KafkaConsumer {
         props.put(
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                 JsonDeserializer.class);
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new JsonDeserializer<>(Object.class));
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        return new DefaultKafkaConsumerFactory<>(props);
+//        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new JsonDeserializer<>(Object.class));
     }
 
     public void consumeDataFromTenant() {
-        String tenantTopic = getTenantTopic(tenantId);
+        String tenantTopic = tenantService.getTenantTopic(tenantId);
         ContainerProperties containerProps = new ContainerProperties(tenantTopic);
         containerProps.setMessageListener(new KafkaMessageListener<String, Object>(tenantService));
         KafkaMessageListenerContainer<String, Object> container = new KafkaMessageListenerContainer<>(consumerFactory(), containerProps);
         container.setBeanName(tenantId + "_consumer");
         container.start();
-    }
-
-    private String getTenantTopic(Long tenantId) {
-        return "test";
     }
 
 

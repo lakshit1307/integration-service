@@ -4,6 +4,7 @@ import com.healthedge.integrationservice.common.IntegrationServiceConstants;
 import com.healthedge.integrationservice.dto.BaseResponse;
 import com.healthedge.integrationservice.kafka.KafkaConsumer;
 import com.healthedge.integrationservice.kafka.KafkaProducer;
+import com.healthedge.integrationservice.service.EncoderDecoder;
 import com.healthedge.integrationservice.service.ProducerServiceImpl;
 import com.healthedge.integrationservice.service.TenantService;
 import org.apache.camel.spring.SpringCamelContext;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 
 @Controller
 public class CamelController {
@@ -39,6 +41,9 @@ public class CamelController {
     @Autowired
     private TenantService tenantService;
 
+    @Autowired
+    private EncoderDecoder encoderDecoder;
+
 
     @GetMapping("/trigger/{tenantId}")
     public ResponseEntity<BaseResponse> triggerTenantReuest(@PathVariable(value = "tenantId") Long tenantId) {
@@ -47,6 +52,7 @@ public class CamelController {
             baseResponse.setStatus(producerService.processDataForTenantId(tenantId));
             return new ResponseEntity<>(baseResponse, HttpStatus.OK);
         } catch (Exception e) {
+            LOGGER.error("Error in triggering load", e);
             baseResponse.setStatus(IntegrationServiceConstants.FAILURE);
             return new ResponseEntity<>(baseResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -56,7 +62,7 @@ public class CamelController {
     public ResponseEntity<BaseResponse> kafkaSendMessage(@PathVariable(value = "message") String message) {
         BaseResponse baseResponse = new BaseResponse();
         try {
-            kafkaProducer.sendMessage("test", message);
+            kafkaProducer.sendMessage("test1", message);
             baseResponse.setStatus(IntegrationServiceConstants.SUCCESS);
             KafkaConsumer kafkaConsumer = new KafkaConsumer(1L, bootstrapServers, tenantService);
             kafkaConsumer.consumeDataFromTenant();
@@ -65,6 +71,40 @@ public class CamelController {
             LOGGER.error("Error while sending kafka message", e);
             baseResponse.setStatus(IntegrationServiceConstants.FAILURE);
             return new ResponseEntity<>(baseResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/tenantresulttokafka/{tenantId}")
+    public ResponseEntity<BaseResponse> sendTenantDataToKafka(@PathVariable(value = "tenantId") Long tenantId) {
+        BaseResponse baseResponse = new BaseResponse();
+        try {
+            producerService.sendTenantDataToKafka(tenantId);
+            KafkaConsumer kafkaConsumer = new KafkaConsumer(1L, bootstrapServers, tenantService);
+            kafkaConsumer.consumeDataFromTenant();
+            baseResponse.setStatus(IntegrationServiceConstants.SUCCESS);
+            return new ResponseEntity<>(baseResponse, HttpStatus.OK);
+        } catch (Exception e) {
+            LOGGER.error("Error while sending kafka message", e);
+            baseResponse.setStatus(IntegrationServiceConstants.FAILURE);
+            baseResponse.setMessage(e.getMessage());
+            return new ResponseEntity<>(baseResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/encrypt/{tenantId}")
+    public ResponseEntity<BaseResponse> encrypt(@PathVariable(value = "tenantId") Long tenantId) {
+            BaseResponse baseResponse = new BaseResponse();
+        try {
+            String encoded=encoderDecoder.encrypt(tenantId.toString(),"tenant1Key");
+            String decoded=encoderDecoder.decrypt(encoded,"tenant1Key");
+            baseResponse.setStatus(IntegrationServiceConstants.SUCCESS);
+            return new ResponseEntity<>(baseResponse, HttpStatus.OK);
+
+        } catch (Exception e) {
+
+            baseResponse.setStatus(IntegrationServiceConstants.FAILURE);
+            return new ResponseEntity<>(baseResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
     }
 

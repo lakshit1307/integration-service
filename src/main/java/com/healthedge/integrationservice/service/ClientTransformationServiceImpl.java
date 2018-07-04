@@ -1,7 +1,9 @@
 package com.healthedge.integrationservice.service;
 
 import com.healthedge.integrationservice.common.IntegrationServiceConstants;
+import com.healthedge.integrationservice.dao.MemberTenantDetailsDao;
 import com.healthedge.integrationservice.dao.TenantAttributeDao;
+import com.healthedge.integrationservice.entity.MemberTenantDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,16 +22,37 @@ public class ClientTransformationServiceImpl implements ClientTransformationServ
     @Autowired
     private TenantAttributeDao tenantAttributeDao;
 
+    @Autowired
+    private MemberTenantDetailsDao memberTenantDetailsDao;
+
     @Override
     public List<Map<String, String>> getTransformedDataSet(Long tenantId) {
         Map<String, String> tenantAttributes = tenantAttributeDao.getTenantAttributesForAttributeType(tenantId, IntegrationServiceConstants.ATTRIBUTE_TYPE_MAPPING);
         List<Map<String, String>> currentDataMap = readerService.readFile();
         List<Map<String, String>> tenantTransformedDataMaps = new ArrayList<>();
         currentDataMap.forEach(dataFileDetails -> {
+            saveMemberTenantDetails(tenantId, dataFileDetails);
             Map<String, String> transformedDataMap = dataSetMapper(tenantAttributes, dataFileDetails, tenantId);
             tenantTransformedDataMaps.add(transformedDataMap);
         });
         return tenantTransformedDataMaps;
+    }
+
+    private void saveMemberTenantDetails(Long tenantId, Map<String, String> dataFileDetails) {
+        MemberTenantDetails memberTenantDetails = new MemberTenantDetails();
+        memberTenantDetails.setCreatedBy(IntegrationServiceConstants.ADMIN_INTEGRATION_SERVICE);
+        memberTenantDetails.setCreatedDate(new Date());
+        Integer age = Integer.parseInt(dataFileDetails.get(IntegrationServiceConstants.MEMBER_AGE));
+        memberTenantDetails.setMemberAge(age);
+        memberTenantDetails.setMemberGender(dataFileDetails.get(IntegrationServiceConstants.MEMBER_GENDER));
+        Long memberId = Long.parseLong(dataFileDetails.get(IntegrationServiceConstants.MEMBER_ID));
+        memberTenantDetails.setMemberId(memberId);
+        memberTenantDetails.setMemberName(dataFileDetails.get(IntegrationServiceConstants.MEMBER_NAME));
+        memberTenantDetails.setMostRecentCondition(dataFileDetails.get(IntegrationServiceConstants.MEMBER_MOST_RECENT_CONDITION));
+        memberTenantDetails.setTenantId(tenantId);
+        memberTenantDetails.setUpdatedBy(IntegrationServiceConstants.ADMIN_INTEGRATION_SERVICE);
+        memberTenantDetails.setUpdatedDate(new Date());
+        memberTenantDetailsDao.saveTenantAttributeDao(memberTenantDetails);
     }
 
     private Map<String, String> dataSetMapper(Map<String, String> tenantAttributes,
@@ -54,7 +77,7 @@ public class ClientTransformationServiceImpl implements ClientTransformationServ
     @Override
     public String transformToCsv(List<Map<String, String>> csvObject, Long tenantId) throws IOException {
         Long currentTime = new Long(new Date().getTime());
-        String fileName = IntegrationServiceConstants.TEMP_FILE_PREFIX + tenantId.toString() + currentTime.toString() + ".csv";
+        String fileName = IntegrationServiceConstants.TEMP_FILE_PREFIX + tenantId.toString() + "_" + currentTime.toString() + ".csv";
         BufferedWriter bw = null;
         FileWriter fw = null;
         String fileText = getFileText(csvObject);

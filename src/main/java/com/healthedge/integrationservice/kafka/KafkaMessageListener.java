@@ -1,5 +1,6 @@
 package com.healthedge.integrationservice.kafka;
 
+import com.healthedge.integrationservice.dto.MemberTenantScore;
 import com.healthedge.integrationservice.service.TenantService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ public class KafkaMessageListener<K, V> implements MessageListener<K, V> {
 
     @Override
     public void onMessage(ConsumerRecord<K, V> data) {
-
-        LOGGER.info("received: " + data);
+        MemberTenantScore memberTenantScore = (MemberTenantScore) data.value();
+        tenantService.saveMemberTenantDetails(memberTenantScore);
     }
 }

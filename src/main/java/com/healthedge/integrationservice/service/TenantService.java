@@ -3,6 +3,7 @@ package com.healthedge.integrationservice.service;
 import com.healthedge.integrationservice.common.IntegrationServiceConstants;
 import com.healthedge.integrationservice.dao.MemberTenantDetailsDao;
 import com.healthedge.integrationservice.dao.TenantAttributeDao;
+import com.healthedge.integrationservice.dto.MemberTenantScore;
 import com.healthedge.integrationservice.dto.TenantAttrubuteRequest;
 import com.healthedge.integrationservice.entity.MemberTenantDetails;
 import com.healthedge.integrationservice.entity.TenantAttribute;
@@ -35,6 +36,10 @@ public class TenantService {
         tenantAttributeDao.saveTenantAttributeDao(tenantAttributes);
     }
 
+    public String getTenantTopic(Long tenantId) {
+        return "test2";
+    }
+
 
     private TenantAttribute createTenantAttribute(Long tenantId, String key, String value, String type) {
         TenantAttribute tenantAttribute = new TenantAttribute();
@@ -49,7 +54,16 @@ public class TenantService {
         return tenantAttribute;
     }
 
-    public List<MemberTenantDetails> getMemberTenantDetailsForTenant(Long tenantId){
+    public List<MemberTenantDetails> getMemberTenantDetailsForTenant(Long tenantId) {
         return memberTenantDetailsDao.getMemberTenantDetails(tenantId);
+    }
+
+    public void saveMemberTenantDetails(MemberTenantScore memberTenantScore) {
+        memberTenantDetailsDao.updateRiskScoreForMemberTenant(memberTenantScore.getTenantId(), memberTenantScore.getMemberId(), memberTenantScore.getRiskScore());
+//        MemberTenantDetails memberTenantDetails = new MemberTenantDetails();
+//        memberTenantDetails.setTenantId(memberTenantScore.getTenantId());
+//        memberTenantDetails.setMemberId(memberTenantScore.getMemberId());
+//        memberTenantDetailsDao.saveTenantAttributeDao(memberTenantDetails);
+
     }
 }

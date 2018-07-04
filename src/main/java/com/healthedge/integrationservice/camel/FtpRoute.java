@@ -14,19 +14,16 @@ import java.util.List;
 
 public class FtpRoute extends RouteBuilder {
 
-    private SpringCamelContext context;
-
     private String routeName;
 
     private String fileName;
 
     private String tenantFtpUrl;
 
-    public FtpRoute(String fileName, String tenantFtpUrl, String routeName, SpringCamelContext context) {
+    public FtpRoute(String fileName, String tenantFtpUrl, String routeName) {
         this.fileName = fileName;
         this.tenantFtpUrl = tenantFtpUrl;
         this.routeName = routeName;
-        this.context = context;
     }
 
     @Override

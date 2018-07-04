@@ -1,4 +1,4 @@
-MEMBER_ID,pre_breakfast_sugar_level,post_breakfast_sugar_level,post_lunch_blood_pressure
-5,4,3,2
-6,6,9,1
-5,1,0,0
+MEMBER_ID,MEMBER_NAME,MEMBER_GENDER,MEMBER_AGE,MOST_RECENT_CONDITION,PRE_BREAKFAST_SUGAR_LEVEL,POST_BREAKFAST_SUGAR_LEVEL,POST_LUNCH_BLOOD_PRESSURE
+1,Pande,M,24,Diag1,4,3,2
+2,Kojo,M,2,Diag2,6,9,1
+3,Gaurav,M,55,Diag3,1,0,0

@@ -21,8 +21,8 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import java.util.HashMap;
 import java.util.Map;
 
-@EnableKafka
-@Configuration
+//@EnableKafka
+//@Configuration
 public class KafkaConsumerConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumerConfig.class);
