@@ -4,6 +4,8 @@ import com.healthedge.integrationservice.common.IntegrationServiceConstants;
 import com.healthedge.integrationservice.dao.MemberTenantDetailsDao;
 import com.healthedge.integrationservice.dao.TenantAttributeDao;
 import com.healthedge.integrationservice.entity.MemberTenantDetails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,8 @@ import java.util.*;
 @Service
 public class ClientTransformationServiceImpl implements ClientTransformationService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientTransformationService.class);
+
     @Autowired
     private ReaderService readerService;
 
@@ -24,6 +28,9 @@ public class ClientTransformationServiceImpl implements ClientTransformationServ
 
     @Autowired
     private MemberTenantDetailsDao memberTenantDetailsDao;
+
+    @Autowired
+    private EncoderDecoder encoderDecoder;
 
     @Override
     public List<Map<String, String>> getTransformedDataSet(Long tenantId) {
@@ -55,18 +62,15 @@ public class ClientTransformationServiceImpl implements ClientTransformationServ
         memberTenantDetailsDao.saveTenantAttributeDao(memberTenantDetails);
     }
 
+
     private Map<String, String> dataSetMapper(Map<String, String> tenantAttributes,
                                               Map<String, String> dataFileDetails, Long tenantId) {
-        return dataSetMapper(tenantAttributes, dataFileDetails);
-    }
-
-    private Map<String, String> dataSetMapper(Map<String, String> tenantAttributes, Map<String, String> dataFileDetails) {
         Map<String, String> transformedDataMap = new HashMap<>();
         tenantAttributes.forEach((tenantAttributeKey, tenantAttributeValue) -> {
             String dataFileValue = dataFileDetails.get(tenantAttributeKey);
 
             if (tenantAttributeKey.equalsIgnoreCase(IntegrationServiceConstants.MEMBER_ID)) {
-                dataFileValue = jumbleMemberId(dataFileValue);
+                dataFileValue = jumbleMemberId(dataFileValue, tenantId);
             }
             transformedDataMap.put(tenantAttributeValue, dataFileValue);
 
@@ -130,8 +134,12 @@ public class ClientTransformationServiceImpl implements ClientTransformationServ
         return stringBuilder.toString();
     }
 
-    private String jumbleMemberId(String memberId) {
-        //TODO change implementation for converting member id
-        return memberId;
+    private String jumbleMemberId(String memberId, Long tenantId) {
+        try {
+            return encoderDecoder.encrypt(memberId, "TENANT_" + tenantId.toString());
+        } catch (Exception e) {
+            LOGGER.error("Error while jumbling member Id", e);
+            return memberId;
+        }
     }
 }
